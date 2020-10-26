@@ -26,10 +26,15 @@ class MainWindow(QtWidgets.QWidget):
         background-color: rgb(255, 255, 255);
         color: #000000;
     }
+    QHeaderView::section {
+        background: rgb(0, 0, 0);
+        color: white;
+    }
     '''
 
     def __init__(self):
         super().__init__()
+        self.oldPos = self.pos()
         self.setupUi()
 
     def setupUi(self):
@@ -43,7 +48,6 @@ class MainWindow(QtWidgets.QWidget):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.tabWidget = QtWidgets.QTabWidget()
         self.tabWidget.setIconSize(QtCore.QSize(30, 30))
-
         self.tabWidget.setDocumentMode(True)
         self.tab = QtWidgets.QWidget()
         self.tabWidget.addTab(self.tab, QtGui.QIcon("b.png"), "Будильник")
@@ -53,7 +57,22 @@ class MainWindow(QtWidgets.QWidget):
         self.tabWidget.addTab(self.tab_3, QtGui.QIcon("t.png"), "Таймер")
         self.tab_4 = QtWidgets.QWidget()
         self.tabWidget.addTab(self.tab_4, QtGui.QIcon("s.png"), "Секундомер")
+
         self.verticalLayout.addWidget(self.tabWidget)
+
+        self.alarm_table_widget = QtWidgets.QTableWidget(self.tab)
+        self.alarm_table_widget.resize(QtCore.QSize(411, 480))
+        self.alarm_table_widget.setColumnCount(4)
+        self.alarm_table_widget.setRowCount(1)
+        self.alarm_table_widget.setHorizontalHeaderLabels(
+            ["Название", "Время", "Милодия", "Состояние"])
+
+        self.timer_table_widget = QtWidgets.QTableWidget(self.tab_3)
+        self.timer_table_widget.resize(QtCore.QSize(411, 480))
+        self.timer_table_widget.setColumnCount(5)
+        self.timer_table_widget.setRowCount(0)
+        self.timer_table_widget.setHorizontalHeaderLabels(
+            ["Название", "Время", "Ост. Время", "Милодия", "Состояние"])
 
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QtGui.QIcon("TrayIcon.png"))
@@ -68,6 +87,13 @@ class MainWindow(QtWidgets.QWidget):
         self.tray_menu.addAction(self.quit_action)
         self.tray_icon.setContextMenu(self.tray_menu)
         self.tray_icon.show()
+
+    def fun(self, state):
+        sender = self.sender()
+        if state:
+            sender.setIcon(QtGui.QIcon("onbtn.png"))
+        else:
+            sender.setIcon(QtGui.QIcon("offbtn.png"))
 
     def settrayFunctions(self):
         self.tray_menu.addAction(self.quit_action)
@@ -88,11 +114,21 @@ class MainWindow(QtWidgets.QWidget):
             self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), "")
             self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), "")
             self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), "")
+            self.alarm_table_widget.resize(x, self.alarm_table_widget.size().height())
+            self.timer_table_widget.resize(x, self.timer_table_widget.size().height())
         elif x >= 411:
             self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), "Будильник")
             self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), "Часы")
             self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), "Таймер")
             self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), "Секундомер")
+            self.alarm_table_widget.resize(x, self.alarm_table_widget.size().height())
+            self.timer_table_widget.resize(x, self.timer_table_widget.size().height())
+        if y >= 480 + 80:
+            self.alarm_table_widget.resize(self.alarm_table_widget.size().width(), 480)
+            self.timer_table_widget.resize(self.timer_table_widget.size().width(), 480)
+        elif y < 480 + 80:
+            self.alarm_table_widget.resize(self.alarm_table_widget.size().width(), y - 80)
+            self.timer_table_widget.resize(self.timer_table_widget.size().width(), y - 80)
 
     def hideEvent(self, a0: QtGui.QHideEvent) -> None:
         self.trayEvent(True)
@@ -103,6 +139,15 @@ class MainWindow(QtWidgets.QWidget):
     def closeEvent(self, event):
         event.ignore()
         self.hide()
+
+    def mousePressEvent(self, event):
+        self.oldPos = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        delta = QtCore.QPoint(event.globalPos() - self.oldPos)
+        # print(delta)
+        self.move(self.x() + delta.x(), self.y() + delta.y())
+        self.oldPos = event.globalPos()
 
 
 if __name__ == "__main__":
